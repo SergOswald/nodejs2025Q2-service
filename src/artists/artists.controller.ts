@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { ArtistsService } from './artists.service';
 import { ensureUuidOrThrow } from '../common/validators';
@@ -16,26 +27,34 @@ export class ArtistsController {
   getOne(@Param('id') id: string) {
     ensureUuidOrThrow(id, 'artistId');
     const res = this.svc.findOne(id);
-    if (!res) throw new BadRequestException('Artist not found'); // will be 404 normally but we map later
+    if (!res) throw new NotFoundException('Artist not found');
     return res;
   }
 
   @Post()
+  @HttpCode(201)
   create(@Body() dto: CreateArtistDto) {
-    if (!dto?.name) throw new BadRequestException('Missing required fields');
-    return { statusCode: 201, body: this.svc.create(dto) };
+    if (!dto?.name) throw new BadRequestException('Missing name');
+    return this.svc.create(dto);
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: CreateArtistDto) {
     ensureUuidOrThrow(id, 'artistId');
-    if (!dto?.name) throw new BadRequestException('Missing required fields');
-    return this.svc.update(id, dto);
+
+    if (!dto?.name) throw new BadRequestException('Missing name');
+
+    const updated = this.svc.update(id, dto);
+    if (!updated) throw new NotFoundException('Artist not found');
+
+    return updated;
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@Param('id') id: string) {
     ensureUuidOrThrow(id, 'artistId');
-    return this.svc.delete(id);
+    const deleted = this.svc.delete(id);
+    if (!deleted) throw new NotFoundException('Artist not found');
   }
 }

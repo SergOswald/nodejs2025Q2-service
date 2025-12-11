@@ -1,41 +1,47 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, BadRequestException } from '@nestjs/common';
-import { CreateAlbumDto } from './dto/create-album.dto';
+import { 
+  Controller, Get, Post, Param, Delete, Body, Put, NotFoundException 
+} from '@nestjs/common';
+import { ApiTags, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AlbumsService } from './albums.service';
-import { ensureUuidOrThrow } from '../common/validators';
+import { CreateAlbumDto, UpdateAlbumDto, AlbumResponseDto } from './album.dto';
 
-@Controller('album')
+@ApiTags('Albums')
+@Controller('albums')
 export class AlbumsController {
-  constructor(private readonly svc: AlbumsService) {}
+  constructor(private readonly albums: AlbumsService) {}
 
   @Get()
-  getAll() {
-    return this.svc.findAll();
+  @ApiResponse({ status: 200, type: [AlbumResponseDto] })
+  findAll() {
+    return this.albums.findAll();
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    ensureUuidOrThrow(id, 'albumId');
-    const res = this.svc.findOne(id);
-    if (!res) throw new BadRequestException('Album not found');
-    return res;
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, type: AlbumResponseDto })
+  @ApiResponse({ status: 404 })
+  findOne(@Param('id') id: string) {
+    const a = this.albums.findOne(id);
+    if (!a) throw new NotFoundException('Album not found');
+    return a;
   }
 
   @Post()
+  @ApiResponse({ status: 201, type: AlbumResponseDto })
   create(@Body() dto: CreateAlbumDto) {
-    if (!dto?.name) throw new BadRequestException('Missing required fields');
-    return { statusCode: 201, body: this.svc.create(dto) };
+    return this.albums.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: CreateAlbumDto) {
-    ensureUuidOrThrow(id, 'albumId');
-    if (!dto?.name) throw new BadRequestException('Missing required fields');
-    return this.svc.update(id, dto);
+  @ApiResponse({ status: 200, type: AlbumResponseDto })
+  @ApiResponse({ status: 404 })
+  update(@Param('id') id: string, @Body() dto: UpdateAlbumDto) {
+    return this.albums.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    ensureUuidOrThrow(id, 'albumId');
-    return this.svc.delete(id);
+  @ApiResponse({ status: 204 })
+  delete(@Param('id') id: string) {
+    this.albums.delete(id);
   }
 }

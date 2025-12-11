@@ -17,15 +17,18 @@ export class FavsService {
   ) {}
 
   getAll(): FavoritesResponse {
-    const artists = Array.from(this.favArtists)
+    const artists = [...this.favArtists]
       .map(id => this.artists.findOne(id))
       .filter(Boolean);
-    const albums = Array.from(this.favAlbums)
+
+    const albums = [...this.favAlbums]
       .map(id => this.albums.findOne(id))
       .filter(Boolean);
-    const tracks = Array.from(this.favTracks)
+
+    const tracks = [...this.favTracks]
       .map(id => this.tracks.findOne(id))
       .filter(Boolean);
+
     return { artists, albums, tracks };
   }
 
@@ -62,13 +65,13 @@ export class FavsService {
     this.favTracks.delete(id);
   }
 
-  // Helpers to update favorites and references when an entity is deleted:
   removeArtistReferences(artistId: string) {
     this.favArtists.delete(artistId);
-    // remove artistId from albums and tracks
+
     this.albums.getAllRef().forEach(a => {
       if (a.artistId === artistId) a.artistId = null;
     });
+
     this.tracks.getAllRef().forEach(t => {
       if (t.artistId === artistId) t.artistId = null;
     });
@@ -76,7 +79,7 @@ export class FavsService {
 
   removeAlbumReferences(albumId: string) {
     this.favAlbums.delete(albumId);
-    // remove albumId from tracks
+
     this.tracks.getAllRef().forEach(t => {
       if (t.albumId === albumId) t.albumId = null;
     });

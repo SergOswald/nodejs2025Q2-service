@@ -10,5 +10,3 @@ export class AppController {
     return this.appService.getHello();
   }
 }
-
-//30-11-2025

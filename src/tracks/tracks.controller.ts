@@ -1,41 +1,47 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, BadRequestException } from '@nestjs/common';
-import { CreateTrackDto } from './dto/create-track.dto';
+import { 
+  Controller, Get, Post, Param, Delete, Body, Put, NotFoundException 
+} from '@nestjs/common';
+import { ApiTags, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { TracksService } from './tracks.service';
-import { ensureUuidOrThrow } from '../common/validators';
+import { CreateTrackDto, UpdateTrackDto, TrackResponseDto } from './track.dto';
 
-@Controller('track')
+@ApiTags('Tracks')
+@Controller('tracks')
 export class TracksController {
-  constructor(private readonly svc: TracksService) {}
+  constructor(private readonly tracks: TracksService) {}
 
   @Get()
-  getAll() {
-    return this.svc.findAll();
+  @ApiResponse({ status: 200, type: [TrackResponseDto] })
+  findAll() {
+    return this.tracks.findAll();
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    ensureUuidOrThrow(id, 'trackId');
-    const res = this.svc.findOne(id);
-    if (!res) throw new BadRequestException('Track not found');
-    return res;
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, type: TrackResponseDto })
+  @ApiResponse({ status: 404 })
+  findOne(@Param('id') id: string) {
+    const t = this.tracks.findOne(id);
+    if (!t) throw new NotFoundException('Track not found');
+    return t;
   }
 
   @Post()
+  @ApiResponse({ status: 201, type: TrackResponseDto })
   create(@Body() dto: CreateTrackDto) {
-    if (!dto?.name) throw new BadRequestException('Missing required fields');
-    return { statusCode: 201, body: this.svc.create(dto) };
+    return this.tracks.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: CreateTrackDto) {
-    ensureUuidOrThrow(id, 'trackId');
-    if (!dto?.name) throw new BadRequestException('Missing required fields');
-    return this.svc.update(id, dto);
+  @ApiResponse({ status: 200, type: TrackResponseDto })
+  @ApiResponse({ status: 404 })
+  update(@Param('id') id: string, @Body() dto: UpdateTrackDto) {
+    return this.tracks.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    ensureUuidOrThrow(id, 'trackId');
-    return this.svc.delete(id);
+  @ApiResponse({ status: 204 })
+  delete(@Param('id') id: string) {
+    this.tracks.delete(id);
   }
 }
