@@ -1,47 +1,46 @@
-import { 
-  Controller, Get, Post, Param, Delete, Body, Put, NotFoundException 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AlbumsService } from './albums.service';
-import { CreateAlbumDto, UpdateAlbumDto, AlbumResponseDto } from './album.dto';
 
-@ApiTags('Albums')
-@Controller('albums')
+@Controller('album')
 export class AlbumsController {
-  constructor(private readonly albums: AlbumsService) {}
+  constructor(private readonly albumsService: AlbumsService) {}
 
   @Get()
-  @ApiResponse({ status: 200, type: [AlbumResponseDto] })
-  findAll() {
-    return this.albums.findAll();
+  getAll() {
+    return this.albumsService.findAll();
   }
 
   @Get(':id')
-  @ApiParam({ name: 'id', type: String })
-  @ApiResponse({ status: 200, type: AlbumResponseDto })
-  @ApiResponse({ status: 404 })
-  findOne(@Param('id') id: string) {
-    const a = this.albums.findOne(id);
-    if (!a) throw new NotFoundException('Album not found');
-    return a;
+  getOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.albumsService.findOne(id);
   }
 
   @Post()
-  @ApiResponse({ status: 201, type: AlbumResponseDto })
-  create(@Body() dto: CreateAlbumDto) {
-    return this.albums.create(dto);
+  create(@Body() dto) {
+    return this.albumsService.create(dto);
   }
 
   @Put(':id')
-  @ApiResponse({ status: 200, type: AlbumResponseDto })
-  @ApiResponse({ status: 404 })
-  update(@Param('id') id: string, @Body() dto: UpdateAlbumDto) {
-    return this.albums.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto,
+  ) {
+    return this.albumsService.update(id, dto);
   }
 
   @Delete(':id')
-  @ApiResponse({ status: 204 })
-  delete(@Param('id') id: string) {
-    this.albums.delete(id);
+  @HttpCode(204)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    this.albumsService.delete(id);
   }
 }

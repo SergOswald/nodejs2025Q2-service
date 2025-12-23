@@ -1,58 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
-import { Track } from './track.entity';
-import { FavsService } from '../favs/favs.service';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TracksService {
-  private tracks: Track[] = [];
-
-  constructor(private favs: FavsService) {}
+  private tracks = [];
 
   findAll() {
     return this.tracks;
   }
 
   findOne(id: string) {
-    return this.tracks.find(t => t.id === id);
+    const track = this.tracks.find(t => t.id === id);
+    if (!track) throw new NotFoundException();
+    return track;
   }
 
-  create(dto: { name: string; duration: number; artistId?: string | null; albumId?: string | null }) {
-    const t: Track = {
-      id: uuidv4(),
+  create(dto) {
+    if (!dto.name || !dto.duration) {
+      throw new BadRequestException();
+    }
+
+    const track = {
+      id: randomUUID(),
       name: dto.name,
-      duration: dto.duration,
       artistId: dto.artistId ?? null,
       albumId: dto.albumId ?? null,
+      duration: dto.duration,
     };
-    this.tracks.push(t);
-    return t;
+
+    this.tracks.push(track);
+    return track;
   }
 
-  update(id: string, dto: { name: string; duration: number; artistId?: string | null; albumId?: string | null }) {
-    const found = this.findOne(id);
-    if (!found) throw new NotFoundException('Track not found');
+  update(id: string, dto) {
+    const track = this.tracks.find(t => t.id === id);
+    if (!track) throw new NotFoundException();
 
-    found.name = dto.name;
-    found.duration = dto.duration;
-    found.artistId = dto.artistId ?? null;
-    found.albumId = dto.albumId ?? null;
-
-    return found;
+    Object.assign(track, dto);
+    return track;
   }
 
   delete(id: string) {
-    const idx = this.tracks.findIndex(t => t.id === id);
-    if (idx === -1) throw new NotFoundException('Track not found');
-
-    const [removed] = this.tracks.splice(idx, 1);
-
-    this.favs.removeTrackReferences(id);
-
-    return removed;
+    const index = this.tracks.findIndex(t => t.id === id);
+    if (index === -1) throw new NotFoundException();
+    this.tracks.splice(index, 1);
   }
 
-  getAllRef() {
-    return this.tracks;
+  clearArtist(id: string) {
+    this.tracks.forEach(t => {
+      if (t.artistId === id) t.artistId = null;
+    });
+  }
+
+  clearAlbum(id: string) {
+    this.tracks.forEach(t => {
+      if (t.albumId === id) t.albumId = null;
+    });
   }
 }

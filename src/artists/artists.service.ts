@@ -1,56 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { TracksService } from '../tracks/tracks.service';
 import { FavsService } from '../favs/favs.service';
-import { Artist } from './artist.entity';
-
 
 @Injectable()
 export class ArtistsService {
-  private artists: Artist[] = [];
+  private artists = [];
 
-  constructor(private favs: FavsService) {}
+  constructor(
+    private tracksService: TracksService,
+    private favsService: FavsService,
+  ) {}
 
   findAll() {
     return this.artists;
   }
 
   findOne(id: string) {
-    return this.artists.find(a => a.id === id);
+    const artist = this.artists.find(a => a.id === id);
+    if (!artist) throw new NotFoundException();
+    return artist;
   }
 
-  create(dto: { name: string; grammy: boolean }) {
-    const artist: Artist = {
-      id: uuidv4(),
+  create(dto) {
+    if (!dto.name) throw new BadRequestException();
+
+    const artist = {
+      id: randomUUID(),
       name: dto.name,
-      grammy: dto.grammy
+      grammy: !!dto.grammy,
     };
+
     this.artists.push(artist);
     return artist;
   }
 
-  update(id: string, dto: { name: string; grammy: boolean }) {
-    const found = this.findOne(id);
-    if (!found) throw new NotFoundException('Artist not found');
+  update(id: string, dto) {
+    const artist = this.artists.find(a => a.id === id);
+    if (!artist) throw new NotFoundException();
 
-    found.name = dto.name;
-    found.grammy = dto.grammy;
-
-    return found;
+    Object.assign(artist, dto);
+    return artist;
   }
 
   delete(id: string) {
-    const idx = this.artists.findIndex(a => a.id === id);
-    if (idx === -1) throw new NotFoundException('Artist not found');
+    const index = this.artists.findIndex(a => a.id === id);
+    if (index === -1) throw new NotFoundException();
 
-    const [removed] = this.artists.splice(idx, 1);
-
-    // очищаем ссылки в tracks, albums и favorites
-    this.favs.removeArtistReferences(id);
-
-    return removed;
-  }
-
-  getAllRef() {
-    return this.artists;
+    this.tracksService.clearArtist(id);
+    this.favsService.removeArtistReferences(id);
+    this.artists.splice(index, 1);
   }
 }

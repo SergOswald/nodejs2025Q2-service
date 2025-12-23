@@ -7,54 +7,45 @@ import {
   Param,
   Body,
   HttpCode,
-  NotFoundException,
-  BadRequestException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { CreateArtistDto } from './dto/create-artist.dto';
 import { ArtistsService } from './artists.service';
-import { ensureUuidOrThrow } from '../common/validators';
+import { FavsService } from '../favs/favs.service';
 
 @Controller('artist')
 export class ArtistsController {
-  constructor(private readonly svc: ArtistsService) {}
+  constructor(
+    private readonly artistsService: ArtistsService,
+    private readonly favsService: FavsService,
+  ) {}
 
   @Get()
   getAll() {
-    return this.svc.findAll();
+    return this.artistsService.findAll();
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    ensureUuidOrThrow(id, 'artistId');
-    const res = this.svc.findOne(id);
-    if (!res) throw new NotFoundException('Artist not found');
-    return res;
+  getOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.artistsService.findOne(id);
   }
 
   @Post()
-  @HttpCode(201)
-  create(@Body() dto: CreateArtistDto) {
-    if (!dto?.name) throw new BadRequestException('Missing name');
-    return this.svc.create(dto);
+  create(@Body() dto) {
+    return this.artistsService.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: CreateArtistDto) {
-    ensureUuidOrThrow(id, 'artistId');
-
-    if (!dto?.name) throw new BadRequestException('Missing name');
-
-    const updated = this.svc.update(id, dto);
-    if (!updated) throw new NotFoundException('Artist not found');
-
-    return updated;
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto,
+  ) {
+    return this.artistsService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
-    ensureUuidOrThrow(id, 'artistId');
-    const deleted = this.svc.delete(id);
-    if (!deleted) throw new NotFoundException('Artist not found');
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    this.artistsService.delete(id);
+    this.favsService.removeArtistReferences(id);
   }
 }

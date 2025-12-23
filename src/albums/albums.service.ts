@@ -1,58 +1,57 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { TracksService } from '../tracks/tracks.service';
 import { FavsService } from '../favs/favs.service';
-import { Album } from './album.entity';
-import { Track } from '../tracks/track.entity';
-
 
 @Injectable()
 export class AlbumsService {
-  private albums: Album[] = [];
+  private albums = [];
 
-  constructor(private favs: FavsService) {}
+  constructor(
+    private tracksService: TracksService,
+    private favsService: FavsService,
+  ) {}
 
   findAll() {
     return this.albums;
   }
 
   findOne(id: string) {
-    return this.albums.find(a => a.id === id);
+    const album = this.albums.find(a => a.id === id);
+    if (!album) throw new NotFoundException();
+    return album;
   }
 
-  create(dto: { name: string; year: number; artistId?: string | null }) {
-    const item: Album = {
-      id: uuidv4(),
+  create(dto) {
+    if (!dto.name || !dto.year) {
+      throw new BadRequestException();
+    }
+
+    const album = {
+      id: randomUUID(),
       name: dto.name,
       year: dto.year,
-      artistId: dto.artistId ?? null
+      artistId: dto.artistId ?? null,
     };
-    this.albums.push(item);
-    return item;
+
+    this.albums.push(album);
+    return album;
   }
 
-  update(id: string, dto: { name: string; year: number; artistId?: string | null }) {
-    const found = this.findOne(id);
-    if (!found) throw new NotFoundException('Album not found');
+  update(id: string, dto) {
+    const album = this.albums.find(a => a.id === id);
+    if (!album) throw new NotFoundException();
 
-    found.name = dto.name;
-    found.year = dto.year;
-    found.artistId = dto.artistId ?? null;
-
-    return found;
+    Object.assign(album, dto);
+    return album;
   }
 
   delete(id: string) {
-    const idx = this.albums.findIndex(a => a.id === id);
-    if (idx === -1) throw new NotFoundException('Album not found');
+    const index = this.albums.findIndex(a => a.id === id);
+    if (index === -1) throw new NotFoundException();
 
-    const [removed] = this.albums.splice(idx, 1);
-
-    this.favs.removeAlbumReferences(id);
-
-    return removed;
-  }
-
-  getAllRef() {
-    return this.albums;
+    this.tracksService.clearAlbum(id);
+    this.favsService.removeAlbum(id);
+    this.albums.splice(index, 1);
   }
 }

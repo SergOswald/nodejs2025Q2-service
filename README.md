@@ -21,6 +21,8 @@ npm install
 
 npm run build
 
+taskkill /IM node.exe /F
+
 ```
 npm start
 ```
@@ -37,6 +39,7 @@ To run all tests without authorization
 
 ```
 npm run test
+в новом термінале
 ```
 
 To run only one of all test suites

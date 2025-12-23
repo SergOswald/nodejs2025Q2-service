@@ -1,91 +1,76 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnprocessableEntityException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ArtistsService } from '../artists/artists.service';
 import { AlbumsService } from '../albums/albums.service';
 import { TracksService } from '../tracks/tracks.service';
-import { FavoritesResponse } from '../models/types';
 
 @Injectable()
 export class FavsService {
-  private favArtists = new Set<string>();
-  private favAlbums = new Set<string>();
-  private favTracks = new Set<string>();
+  private readonly favs = {
+    artists: [],
+    albums: [],
+    tracks: [],
+  };
 
   constructor(
-    private artists: ArtistsService,
-    private albums: AlbumsService,
-    private tracks: TracksService
+    private readonly artistsService: ArtistsService,
+    private readonly albumsService: AlbumsService,
+    private readonly tracksService: TracksService,
   ) {}
 
-  getAll(): FavoritesResponse {
-    const artists = [...this.favArtists]
-      .map(id => this.artists.findOne(id))
-      .filter(Boolean);
-
-    const albums = [...this.favAlbums]
-      .map(id => this.albums.findOne(id))
-      .filter(Boolean);
-
-    const tracks = [...this.favTracks]
-      .map(id => this.tracks.findOne(id))
-      .filter(Boolean);
-
-    return { artists, albums, tracks };
+  getAll() {
+    return this.favs;
   }
 
   addArtist(id: string) {
-    const art = this.artists.findOne(id);
-    if (!art) throw new UnprocessableEntityException('Artist not found');
-    this.favArtists.add(id);
+    const artist = this.artistsService.findOne(id);
+    if (!artist) throw new UnprocessableEntityException();
+    this.favs.artists.push(artist);
   }
 
   removeArtist(id: string) {
-    if (!this.favArtists.has(id)) throw new NotFoundException('Artist is not favorite');
-    this.favArtists.delete(id);
+    const idx = this.favs.artists.findIndex(a => a.id === id);
+    if (idx === -1) throw new NotFoundException();
+    this.favs.artists.splice(idx, 1);
   }
 
   addAlbum(id: string) {
-    const album = this.albums.findOne(id);
-    if (!album) throw new UnprocessableEntityException('Album not found');
-    this.favAlbums.add(id);
+    const album = this.albumsService.findOne(id);
+    if (!album) throw new UnprocessableEntityException();
+    this.favs.albums.push(album);
   }
 
   removeAlbum(id: string) {
-    if (!this.favAlbums.has(id)) throw new NotFoundException('Album is not favorite');
-    this.favAlbums.delete(id);
+    const idx = this.favs.albums.findIndex(a => a.id === id);
+    if (idx === -1) throw new NotFoundException();
+    this.favs.albums.splice(idx, 1);
   }
 
   addTrack(id: string) {
-    const tr = this.tracks.findOne(id);
-    if (!tr) throw new UnprocessableEntityException('Track not found');
-    this.favTracks.add(id);
+    const track = this.tracksService.findOne(id);
+    if (!track) throw new UnprocessableEntityException();
+    this.favs.tracks.push(track);
   }
 
   removeTrack(id: string) {
-    if (!this.favTracks.has(id)) throw new NotFoundException('Track is not favorite');
-    this.favTracks.delete(id);
+    const idx = this.favs.tracks.findIndex(t => t.id === id);
+    if (idx === -1) throw new NotFoundException();
+    this.favs.tracks.splice(idx, 1);
   }
 
-  removeArtistReferences(artistId: string) {
-    this.favArtists.delete(artistId);
-
-    this.albums.getAllRef().forEach(a => {
-      if (a.artistId === artistId) a.artistId = null;
-    });
-
-    this.tracks.getAllRef().forEach(t => {
-      if (t.artistId === artistId) t.artistId = null;
-    });
+  removeArtistReferences(id: string) {
+    this.favs.artists = this.favs.artists.filter(a => a.id !== id);
   }
 
-  removeAlbumReferences(albumId: string) {
-    this.favAlbums.delete(albumId);
-
-    this.tracks.getAllRef().forEach(t => {
-      if (t.albumId === albumId) t.albumId = null;
-    });
+  removeAlbumReferences(id: string) {
+    this.favs.albums = this.favs.albums.filter(a => a.id !== id);
   }
 
-  removeTrackReferences(trackId: string) {
-    this.favTracks.delete(trackId);
+  removeTrackReferences(id: string) {
+    this.favs.tracks = this.favs.tracks.filter(t => t.id !== id);
   }
 }

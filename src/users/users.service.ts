@@ -1,53 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
-import { User } from '../models/types';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
+  private users = [];
 
-  findAll(): Omit<User, 'password'>[] {
-    return this.users.map(({ password, ...rest }) => rest);
+  findAll() {
+    return this.users.map(({ password, ...u }) => u);
   }
 
-  findOneRaw(id: string): User | undefined {
-    return this.users.find(u => u.id === id);
-  }
-
-  findOnePublic(id: string): Omit<User, 'password'> {
-    const u = this.findOneRaw(id);
-    if (!u) throw new NotFoundException('User not found');
-    // hide password
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...rest } = u;
+  findOnePublic(id: string) {
+    const user = this.users.find(u => u.id === id);
+    if (!user) throw new NotFoundException();
+    const { password, ...rest } = user;
     return rest;
   }
 
-  create(createDto: { login: string; password: string }) {
-    const u: User = {
-      id: uuidv4(),
-      login: createDto.login,
-      password: createDto.password,
+  create(dto) {
+    if (!dto.login || !dto.password) {
+      throw new BadRequestException();
+    }
+
+    const user = {
+      id: randomUUID(),
+      login: dto.login,
+      password: dto.password,
+      version: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
-    this.users.push(u);
-    const { password, ...publicUser } = u;
-    return publicUser;
+
+    this.users.push(user);
+    return this.findOnePublic(user.id);
   }
 
   updatePassword(id: string, oldPass: string, newPass: string) {
-    const user = this.findOneRaw(id);
-    if (!user) throw new NotFoundException('User not found');
-    if (user.password !== oldPass) {
-      return null; // caller will translate to 403
-    }
+    const user = this.users.find(u => u.id === id);
+    if (!user) throw new NotFoundException();
+    if (user.password !== oldPass) throw new BadRequestException();
+
     user.password = newPass;
-    const { password, ...publicUser } = user;
-    return publicUser;
+    user.version++;
+    user.updatedAt = Date.now();
+
+    return this.findOnePublic(id);
   }
 
   delete(id: string) {
-    const idx = this.users.findIndex(u => u.id === id);
-    if (idx === -1) throw new NotFoundException('User not found');
-    this.users.splice(idx, 1);
+    const index = this.users.findIndex(u => u.id === id);
+    if (index === -1) throw new NotFoundException();
+    this.users.splice(index, 1);
   }
 }
