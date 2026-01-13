@@ -1,54 +1,41 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { TracksService } from '../tracks/tracks.service';
-import { FavsService } from '../favs/favs.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
+import { Artist } from './interfaces/artist.interface';
 
 @Injectable()
 export class ArtistsService {
-  private artists = [];
+  private artists: Artist[] = [];
 
-  constructor(
-    private tracksService: TracksService,
-    private favsService: FavsService,
-  ) {}
-
-  findAll() {
+  findAll(): Artist[] {
     return this.artists;
   }
 
-  findOne(id: string) {
+  findOne(id: string): Artist {
     const artist = this.artists.find(a => a.id === id);
-    if (!artist) throw new NotFoundException();
+    if (!artist) {
+      throw new NotFoundException('Artist not found');
+    }
     return artist;
   }
 
-  create(dto) {
-    if (!dto.name) throw new BadRequestException();
-
-    const artist = {
-      id: randomUUID(),
+  create(dto: { name: string; grammy: boolean }): Artist {
+    const artist: Artist = {
+      id: uuidv4(),
       name: dto.name,
-      grammy: !!dto.grammy,
+      grammy: dto.grammy,
     };
-
     this.artists.push(artist);
     return artist;
   }
 
-  update(id: string, dto) {
-    const artist = this.artists.find(a => a.id === id);
-    if (!artist) throw new NotFoundException();
-
+  update(id: string, dto: { name?: string; grammy?: boolean }): Artist {
+    const artist = this.findOne(id);
     Object.assign(artist, dto);
     return artist;
   }
 
-  delete(id: string) {
-    const index = this.artists.findIndex(a => a.id === id);
-    if (index === -1) throw new NotFoundException();
-
-    this.tracksService.clearArtist(id);
-    this.favsService.removeArtistReferences(id);
-    this.artists.splice(index, 1);
+  delete(id: string): void {
+    this.findOne(id);
+    this.artists = this.artists.filter(a => a.id !== id);
   }
 }

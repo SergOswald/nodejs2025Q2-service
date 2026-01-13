@@ -10,14 +10,10 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ArtistsService } from './artists.service';
-import { FavsService } from '../favs/favs.service';
 
 @Controller('artist')
 export class ArtistsController {
-  constructor(
-    private readonly artistsService: ArtistsService,
-    private readonly favsService: FavsService,
-  ) {}
+  constructor(private readonly artistsService: ArtistsService) {}
 
   @Get()
   getAll() {
@@ -46,6 +42,5 @@ export class ArtistsController {
   @HttpCode(204)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     this.artistsService.delete(id);
-    this.favsService.removeArtistReferences(id);
   }
 }

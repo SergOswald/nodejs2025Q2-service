@@ -1,57 +1,54 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { TracksService } from '../tracks/tracks.service';
-import { FavsService } from '../favs/favs.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
+
+export interface Album {
+  id: string;
+  name: string;
+  year: number;
+  artistId: string | null;
+}
 
 @Injectable()
 export class AlbumsService {
-  private albums = [];
+  private albums: Album[] = [];
 
-  constructor(
-    private tracksService: TracksService,
-    private favsService: FavsService,
-  ) {}
-
-  findAll() {
+  findAll(): Album[] {
     return this.albums;
   }
 
-  findOne(id: string) {
-    const album = this.albums.find(a => a.id === id);
-    if (!album) throw new NotFoundException();
+  findOne(id: string): Album {
+    const album = this.albums.find((a) => a.id === id);
+    if (!album) {
+      throw new NotFoundException('Album not found');
+    }
     return album;
   }
 
-  create(dto) {
-    if (!dto.name || !dto.year) {
-      throw new BadRequestException();
-    }
-
-    const album = {
-      id: randomUUID(),
-      name: dto.name,
-      year: dto.year,
-      artistId: dto.artistId ?? null,
+  create(data: Omit<Album, 'id'>): Album {
+    const album: Album = {
+      id: uuidv4(),
+      ...data,
     };
-
     this.albums.push(album);
     return album;
   }
 
-  update(id: string, dto) {
-    const album = this.albums.find(a => a.id === id);
-    if (!album) throw new NotFoundException();
-
-    Object.assign(album, dto);
+  update(id: string, data: Omit<Album, 'id'>): Album {
+    const album = this.findOne(id);
+    Object.assign(album, data);
     return album;
   }
 
-  delete(id: string) {
-    const index = this.albums.findIndex(a => a.id === id);
-    if (index === -1) throw new NotFoundException();
+  remove(id: string): void {
+    this.findOne(id);
+    this.albums = this.albums.filter((a) => a.id !== id);
+  }
 
-    this.tracksService.clearAlbum(id);
-    this.favsService.removeAlbum(id);
-    this.albums.splice(index, 1);
+  clearArtist(artistId: string): void {
+    this.albums.forEach((a) => {
+      if (a.artistId === artistId) {
+        a.artistId = null;
+      }
+    });
   }
 }

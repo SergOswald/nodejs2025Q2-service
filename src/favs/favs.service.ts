@@ -1,16 +1,17 @@
-import {
-  Injectable,
-  BadRequestException,
-  UnprocessableEntityException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ArtistsService } from '../artists/artists.service';
 import { AlbumsService } from '../albums/albums.service';
 import { TracksService } from '../tracks/tracks.service';
 
+interface Favs {
+  artists: string[];
+  albums: string[];
+  tracks: string[];
+}
+
 @Injectable()
 export class FavsService {
-  private readonly favs = {
+  private favs: Favs = {
     artists: [],
     albums: [],
     tracks: [],
@@ -22,55 +23,38 @@ export class FavsService {
     private readonly tracksService: TracksService,
   ) {}
 
-  getAll() {
-    return this.favs;
+  findAll() {
+    return {
+      artists: this.favs.artists.map((id) => this.artistsService.findOne(id)),
+      albums: this.favs.albums.map((id) => this.albumsService.findOne(id)),
+      tracks: this.favs.tracks.map((id) => this.tracksService.findOne(id)),
+    };
   }
 
-  addArtist(id: string) {
-    const artist = this.artistsService.findOne(id);
-    if (!artist) throw new UnprocessableEntityException();
-    this.favs.artists.push(artist);
+  addArtist(id: string): void {
+    this.artistsService.findOne(id);
+    this.favs.artists.push(id);
   }
 
-  removeArtist(id: string) {
-    const idx = this.favs.artists.findIndex(a => a.id === id);
-    if (idx === -1) throw new NotFoundException();
-    this.favs.artists.splice(idx, 1);
+  removeArtist(id: string): void {
+    this.favs.artists = this.favs.artists.filter((a) => a !== id);
   }
 
-  addAlbum(id: string) {
-    const album = this.albumsService.findOne(id);
-    if (!album) throw new UnprocessableEntityException();
-    this.favs.albums.push(album);
+  addAlbum(id: string): void {
+    this.albumsService.findOne(id);
+    this.favs.albums.push(id);
   }
 
-  removeAlbum(id: string) {
-    const idx = this.favs.albums.findIndex(a => a.id === id);
-    if (idx === -1) throw new NotFoundException();
-    this.favs.albums.splice(idx, 1);
+  removeAlbum(id: string): void {
+    this.favs.albums = this.favs.albums.filter((a) => a !== id);
   }
 
-  addTrack(id: string) {
-    const track = this.tracksService.findOne(id);
-    if (!track) throw new UnprocessableEntityException();
-    this.favs.tracks.push(track);
+  addTrack(id: string): void {
+    this.tracksService.findOne(id);
+    this.favs.tracks.push(id);
   }
 
-  removeTrack(id: string) {
-    const idx = this.favs.tracks.findIndex(t => t.id === id);
-    if (idx === -1) throw new NotFoundException();
-    this.favs.tracks.splice(idx, 1);
-  }
-
-  removeArtistReferences(id: string) {
-    this.favs.artists = this.favs.artists.filter(a => a.id !== id);
-  }
-
-  removeAlbumReferences(id: string) {
-    this.favs.albums = this.favs.albums.filter(a => a.id !== id);
-  }
-
-  removeTrackReferences(id: string) {
-    this.favs.tracks = this.favs.tracks.filter(t => t.id !== id);
+  removeTrack(id: string): void {
+    this.favs.tracks = this.favs.tracks.filter((t) => t !== id);
   }
 }

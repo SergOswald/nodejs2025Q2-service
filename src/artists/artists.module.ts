@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ArtistsService } from './artists.service';
 import { ArtistsController } from './artists.controller';
+import { ArtistsService } from './artists.service';
+import { AlbumsModule } from '../albums/albums.module';
 import { TracksModule } from '../tracks/tracks.module';
-import { FavsModule } from '../favs/favs.module';
 
 @Module({
-  imports: [
-    TracksModule, // ← чтобы получить TracksService
-    FavsModule,   // ← чтобы получить FavsService
-  ],
+  imports: [AlbumsModule, TracksModule],
   controllers: [ArtistsController],
   providers: [ArtistsService],
+  exports: [ArtistsService], // ОБЯЗАТЕЛЬНО
 })
 export class ArtistsModule {}

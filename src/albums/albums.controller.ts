@@ -6,8 +6,8 @@ import {
   Delete,
   Param,
   Body,
-  HttpCode,
   ParseUUIDPipe,
+  HttpCode,
 } from '@nestjs/common';
 import { AlbumsService } from './albums.service';
 
@@ -41,6 +41,6 @@ export class AlbumsController {
   @Delete(':id')
   @HttpCode(204)
   remove(@Param('id', ParseUUIDPipe) id: string) {
-    this.albumsService.delete(id);
+    this.albumsService.remove(id);
   }
 }

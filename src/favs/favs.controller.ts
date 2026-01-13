@@ -15,11 +15,10 @@ export class FavsController {
 
   @Get()
   getAll() {
-    return this.favsService.getAll();
+    return this.favsService.findAll();
   }
 
   @Post('artist/:id')
-  @HttpCode(201)
   addArtist(@Param('id', ParseUUIDPipe) id: string) {
     this.favsService.addArtist(id);
   }
@@ -31,7 +30,6 @@ export class FavsController {
   }
 
   @Post('album/:id')
-  @HttpCode(201)
   addAlbum(@Param('id', ParseUUIDPipe) id: string) {
     this.favsService.addAlbum(id);
   }
@@ -43,7 +41,6 @@ export class FavsController {
   }
 
   @Post('track/:id')
-  @HttpCode(201)
   addTrack(@Param('id', ParseUUIDPipe) id: string) {
     this.favsService.addTrack(id);
   }
