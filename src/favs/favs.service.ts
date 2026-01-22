@@ -1,60 +1,66 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  UnprocessableEntityException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { ArtistsService } from '../artists/artists.service';
 import { AlbumsService } from '../albums/albums.service';
 import { TracksService } from '../tracks/tracks.service';
 
-interface Favs {
-  artists: string[];
-  albums: string[];
-  tracks: string[];
-}
-
 @Injectable()
 export class FavsService {
-  private favs: Favs = {
-    artists: [],
-    albums: [],
-    tracks: [],
-  };
+  private readonly artists: string[] = [];
+  private readonly albums: string[] = [];
+  private readonly tracks: string[] = [];
 
   constructor(
+    @Inject(forwardRef(() => ArtistsService))
     private readonly artistsService: ArtistsService,
     private readonly albumsService: AlbumsService,
     private readonly tracksService: TracksService,
   ) {}
 
-  findAll() {
+  getAll() {
     return {
-      artists: this.favs.artists.map((id) => this.artistsService.findOne(id)),
-      albums: this.favs.albums.map((id) => this.albumsService.findOne(id)),
-      tracks: this.favs.tracks.map((id) => this.tracksService.findOne(id)),
+      artists: this.artists.map((id) => this.artistsService.getOne(id)),
+      albums: this.albums.map((id) => this.albumsService.findOne(id)),
+      tracks: this.tracks.map((id) => this.tracksService.findOne(id)),
     };
   }
 
   addArtist(id: string): void {
-    this.artistsService.findOne(id);
-    this.favs.artists.push(id);
-  }
-
-  removeArtist(id: string): void {
-    this.favs.artists = this.favs.artists.filter((a) => a !== id);
+    this.artistsService.getOne(id);
+    this.artists.push(id);
   }
 
   addAlbum(id: string): void {
     this.albumsService.findOne(id);
-    this.favs.albums.push(id);
-  }
-
-  removeAlbum(id: string): void {
-    this.favs.albums = this.favs.albums.filter((a) => a !== id);
+    this.albums.push(id);
   }
 
   addTrack(id: string): void {
     this.tracksService.findOne(id);
-    this.favs.tracks.push(id);
+    this.tracks.push(id);
+  }
+
+  removeArtist(id: string): void {
+    this.remove(this.artists, id);
+  }
+
+  removeAlbum(id: string): void {
+    this.remove(this.albums, id);
   }
 
   removeTrack(id: string): void {
-    this.favs.tracks = this.favs.tracks.filter((t) => t !== id);
+    this.remove(this.tracks, id);
+  }
+
+  private remove(collection: string[], id: string): void {
+    const index = collection.indexOf(id);
+    if (index === -1) {
+      throw new UnprocessableEntityException();
+    }
+    collection.splice(index, 1);
   }
 }

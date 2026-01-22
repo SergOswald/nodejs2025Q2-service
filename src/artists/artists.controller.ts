@@ -4,43 +4,43 @@ import {
   Post,
   Put,
   Delete,
-  Param,
   Body,
-  HttpCode,
+  Param,
   ParseUUIDPipe,
+  HttpCode,
 } from '@nestjs/common';
-import { ArtistsService } from './artists.service';
+import { ArtistsService, Artist } from './artists.service';
 
 @Controller('artist')
 export class ArtistsController {
   constructor(private readonly artistsService: ArtistsService) {}
 
   @Get()
-  getAll() {
-    return this.artistsService.findAll();
+  getAll(): Artist[] {
+    return this.artistsService.getAll();
   }
 
   @Get(':id')
-  getOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.artistsService.findOne(id);
+  getOne(@Param('id', ParseUUIDPipe) id: string): Artist {
+    return this.artistsService.getOne(id);
   }
 
   @Post()
-  create(@Body() dto) {
-    return this.artistsService.create(dto);
+  create(@Body() body: Omit<Artist, 'id'>): Artist {
+    return this.artistsService.create(body);
   }
 
   @Put(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto,
-  ) {
-    return this.artistsService.update(id, dto);
+    @Body() body: Omit<Artist, 'id'>,
+  ): Artist {
+    return this.artistsService.update(id, body);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    this.artistsService.delete(id);
+  remove(@Param('id', ParseUUIDPipe) id: string): void {
+    this.artistsService.remove(id);
   }
 }

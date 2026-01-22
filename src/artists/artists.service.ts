@@ -1,41 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { Artist } from './interfaces/artist.interface';
+import { FavsService } from '../favs/favs.service';
+
+export interface Artist {
+  id: string;
+  name: string;
+  grammy: boolean;
+}
 
 @Injectable()
 export class ArtistsService {
-  private artists: Artist[] = [];
+  // ⬇️ ВОТ ЭТОГО ПОЛЯ НЕ ХВАТАЛО
+  private readonly artists: Artist[] = [];
 
-  findAll(): Artist[] {
+  constructor(
+    @Inject(forwardRef(() => FavsService))
+    private readonly favsService: FavsService,
+  ) {}
+
+  getAll(): Artist[] {
     return this.artists;
   }
 
-  findOne(id: string): Artist {
-    const artist = this.artists.find(a => a.id === id);
+  getOne(id: string): Artist {
+    const artist = this.artists.find((a) => a.id === id);
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
     return artist;
   }
 
-  create(dto: { name: string; grammy: boolean }): Artist {
+  create(data: Omit<Artist, 'id'>): Artist {
     const artist: Artist = {
       id: uuidv4(),
-      name: dto.name,
-      grammy: dto.grammy,
+      ...data,
     };
     this.artists.push(artist);
     return artist;
   }
 
-  update(id: string, dto: { name?: string; grammy?: boolean }): Artist {
-    const artist = this.findOne(id);
-    Object.assign(artist, dto);
+  update(id: string, data: Omit<Artist, 'id'>): Artist {
+    const artist = this.getOne(id);
+    artist.name = data.name;
+    artist.grammy = data.grammy;
     return artist;
   }
 
-  delete(id: string): void {
-    this.findOne(id);
-    this.artists = this.artists.filter(a => a.id !== id);
+  remove(id: string): void {
+    const index = this.artists.findIndex((a) => a.id === id);
+    if (index === -1) {
+      throw new NotFoundException('Artist not found');
+    }
+
+    // ⬇️ важно для тестов
+    this.favsService.removeArtist(id);
+
+    this.artists.splice(index, 1);
   }
 }
