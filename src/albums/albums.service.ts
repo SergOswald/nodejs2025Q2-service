@@ -1,27 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Album } from '../albums/album.entity';
+import { ArtistsService } from '../artists/artists.service';
+import { TracksService } from '../tracks/tracks.service';
 import { v4 as uuidv4 } from 'uuid';
-
-export interface Album {
-  id: string;
-  name: string;
-  year: number;
-  artistId: string | null;
-}
 
 @Injectable()
 export class AlbumsService {
   private albums: Album[] = [];
 
+  constructor(
+    @Inject(forwardRef(() => ArtistsService))
+    private readonly artistsService: ArtistsService,
+    private readonly tracksService: TracksService,
+  ) {}
+
   findAll(): Album[] {
     return this.albums;
   }
 
-  findOne(id: string): Album {
-    const album = this.albums.find((a) => a.id === id);
-    if (!album) {
-      throw new NotFoundException('Album not found');
-    }
-    return album;
+  findOne(id: string): Album | null {
+    return this.albums.find((a) => a.id === id) ?? null;
   }
 
   create(data: Omit<Album, 'id'>): Album {
@@ -29,26 +27,33 @@ export class AlbumsService {
       id: uuidv4(),
       ...data,
     };
+
     this.albums.push(album);
     return album;
   }
 
-  update(id: string, data: Omit<Album, 'id'>): Album {
+  update(id: string, data: Partial<Album>): Album | null {
     const album = this.findOne(id);
+    if (!album) return null;
+
     Object.assign(album, data);
     return album;
   }
 
   remove(id: string): void {
-    this.findOne(id);
     this.albums = this.albums.filter((a) => a.id !== id);
+
+    // обнуляем albumId у треков
+    this.tracksService.removeAlbum(id);
   }
 
-  clearArtist(artistId: string): void {
-    this.albums.forEach((a) => {
-      if (a.artistId === artistId) {
-        a.artistId = null;
+  resetArtist(artistId: string): void {
+    this.albums.forEach((album) => {
+      if (album.artistId === artistId) {
+        album.artistId = null;
       }
     });
   }
+  
+  
 }

@@ -1,6 +1,7 @@
 import {
   Injectable,
   UnprocessableEntityException,
+  NotFoundException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -23,25 +24,72 @@ export class FavsService {
 
   getAll() {
     return {
-      artists: this.artists.map((id) => this.artistsService.getOne(id)),
-      albums: this.albums.map((id) => this.albumsService.findOne(id)),
-      tracks: this.tracks.map((id) => this.tracksService.findOne(id)),
+      artists: this.artists
+        .map((id) => {
+          try {
+            return this.artistsService.findOne(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean),
+
+      albums: this.albums
+        .map((id) => {
+          try {
+            return this.albumsService.findOne(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean),
+
+      tracks: this.tracks
+        .map((id) => {
+          try {
+            return this.tracksService.findOne(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean),
     };
   }
 
   addArtist(id: string): void {
-    this.artistsService.getOne(id);
-    this.artists.push(id);
+    try {
+      this.artistsService.findOne(id);
+    } catch {
+      throw new UnprocessableEntityException();
+    }
+
+    if (!this.artists.includes(id)) {
+      this.artists.push(id);
+    }
   }
 
   addAlbum(id: string): void {
-    this.albumsService.findOne(id);
-    this.albums.push(id);
+    try {
+      this.albumsService.findOne(id);
+    } catch {
+      throw new UnprocessableEntityException();
+    }
+
+    if (!this.albums.includes(id)) {
+      this.albums.push(id);
+    }
   }
 
   addTrack(id: string): void {
-    this.tracksService.findOne(id);
-    this.tracks.push(id);
+    try {
+      this.tracksService.findOne(id);
+    } catch {
+      throw new UnprocessableEntityException();
+    }
+
+    if (!this.tracks.includes(id)) {
+      this.tracks.push(id);
+    }
   }
 
   removeArtist(id: string): void {
@@ -59,8 +107,11 @@ export class FavsService {
   private remove(collection: string[], id: string): void {
     const index = collection.indexOf(id);
     if (index === -1) {
-      throw new UnprocessableEntityException();
+      throw new NotFoundException();
     }
+
     collection.splice(index, 1);
   }
 }
+
+
