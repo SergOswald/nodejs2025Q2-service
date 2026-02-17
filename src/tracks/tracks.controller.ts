@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { TracksService } from './tracks.service';
+import { CreateTrackDto, UpdateTrackDto } from './track.dto';
 
 @Controller('track')
 export class TracksController {
@@ -26,20 +27,20 @@ export class TracksController {
   }
 
   @Post()
-  create(@Body() dto) {
+  create(@Body() dto: CreateTrackDto) {
     return this.tracksService.create(dto);
   }
 
   @Put(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto,
+    @Body() dto: UpdateTrackDto,
   ) {
     return this.tracksService.update(id, dto);
   }
 
-  @Delete(':id')
   @HttpCode(204)
+  @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     this.tracksService.remove(id);
   }

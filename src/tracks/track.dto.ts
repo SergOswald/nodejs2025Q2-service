@@ -1,34 +1,37 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsInt, Min, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateTrackDto {
-  @ApiProperty()
+  @IsString()
   name: string;
 
-  @ApiProperty()
-  duration: number;
-
-  @ApiProperty({ required: false, nullable: true })
-  artistId?: string | null;
-
-  @ApiProperty({ required: false, nullable: true })
-  albumId?: string | null;
-}
-
-export class UpdateTrackDto extends CreateTrackDto {}
-
-export class TrackResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiProperty()
-  duration: number;
-
-  @ApiProperty({ nullable: true })
+  @IsOptional()
+  @IsUUID()
   artistId: string | null;
 
-  @ApiProperty({ nullable: true })
+  @IsOptional()
+  @IsUUID()
   albumId: string | null;
+
+  @IsInt()
+  @Min(0)
+  duration: number;
+}
+
+export class UpdateTrackDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsUUID()
+  artistId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  albumId?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  duration?: number;
 }

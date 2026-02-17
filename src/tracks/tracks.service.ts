@@ -21,12 +21,15 @@ export class TracksService {
   }
 
   findOne(id: string) {
-    const track = this.tracks.find((t) => t.id === id);
+    const track = this.tracks.find((a) => a.id === id);
+  
     if (!track) {
       throw new NotFoundException();
     }
+  
     return track;
   }
+  
   
 
   create(data) {

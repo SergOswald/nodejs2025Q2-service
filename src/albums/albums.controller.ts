@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
 } from '@nestjs/common';
+import { CreateAlbumDto, UpdateAlbumDto } from './album.dto';
 import { AlbumsService } from './albums.service';
 
 @Controller('album')
@@ -26,20 +27,20 @@ export class AlbumsController {
   }
 
   @Post()
-  create(@Body() dto) {
+  create(@Body() dto: CreateAlbumDto) {
     return this.albumsService.create(dto);
   }
 
   @Put(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto,
+    @Body() dto: UpdateAlbumDto,
   ) {
     return this.albumsService.update(id, dto);
   }
 
-  @Delete(':id')
   @HttpCode(204)
+  @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     this.albumsService.remove(id);
   }

@@ -11,13 +11,18 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+  
+      // ⭐ ЭТО ВАЖНО
+      errorHttpStatusCode: 400,
     }),
   );
+  
 
   // --- Swagger документация ---
   const config = new DocumentBuilder()
